@@ -3,8 +3,8 @@ import { Coord } from "./Coord";
 type CellState = "empty" | "filled" | "processed";
 
 function toGrid(normalizedPolyomino: Coord[]): CellState[][] {
-  const height = Math.max(...normalizedPolyomino.map(([_, y]) => y));
-  const width = Math.max(...normalizedPolyomino.map(([x]) => x));
+  const height = Math.max(...normalizedPolyomino.map(([_, y]) => y)) + 1;
+  const width = Math.max(...normalizedPolyomino.map(([x]) => x)) + 1;
   const result: CellState[][] = Array.from(new Array(height)).map(() =>
     Array.from(new Array(width)).map(() => "empty")
   );
@@ -71,16 +71,19 @@ export function encodeWithConfig(
   ): "forward" | "turnLeft" | "turnRight" {
     return to === direction
       ? "forward"
-      : (["turnLeft", "turnRight"] as const)[+(turnL[direction] === to)];
+      : (["turnRight", "turnLeft"] as const)[+(turnL[direction] === to)];
   }
 
   function nextDirection(
     filled: Record<Direction, boolean>
   ): [push: boolean, command: Exclude<Command, "push">] {
-    const count = [filled.up, filled.right, filled.down, filled.left].reduce(
-      (acc, curr) => acc + +curr,
-      0
-    );
+    console.log(filled);
+    const count = [
+      filled.up && direction !== "down",
+      filled.right && direction !== "left",
+      filled.down && direction !== "up",
+      filled.left && direction !== "right",
+    ].reduce((acc, curr) => acc + +curr, 0);
     if (!count) {
       return [false, "pop"];
     }
@@ -105,21 +108,39 @@ export function encodeWithConfig(
       }
     } else {
       if (ccw) {
-        if (filled[firstDirection]) {
+        if (
+          filled[firstDirection] &&
+          firstDirection !== turnL[turnL[direction]]
+        ) {
           return [push, directionToCommand(firstDirection)];
-        } else if (filled[turnL[firstDirection]]) {
+        } else if (
+          filled[turnL[firstDirection]] &&
+          firstDirection !== turnL[direction]
+        ) {
           return [push, directionToCommand(turnL[firstDirection])];
-        } else if (filled[turnL[turnL[firstDirection]]]) {
+        } else if (
+          filled[turnL[turnL[firstDirection]]] &&
+          firstDirection !== direction
+        ) {
           return [push, directionToCommand(turnL[turnL[firstDirection]])];
         } else {
           return [push, directionToCommand(turnR[firstDirection])];
         }
       } else {
-        if (filled[firstDirection]) {
+        if (
+          filled[firstDirection] &&
+          firstDirection !== turnL[turnL[direction]]
+        ) {
           return [push, directionToCommand(firstDirection)];
-        } else if (filled[turnR[firstDirection]]) {
+        } else if (
+          filled[turnR[firstDirection]] &&
+          firstDirection !== turnR[direction]
+        ) {
           return [push, directionToCommand(turnR[firstDirection])];
-        } else if (filled[turnR[turnR[firstDirection]]]) {
+        } else if (
+          filled[turnR[turnR[firstDirection]]] &&
+          firstDirection !== direction
+        ) {
           return [push, directionToCommand(turnR[turnR[firstDirection]])];
         } else {
           return [push, directionToCommand(turnL[firstDirection])];
@@ -178,7 +199,7 @@ export function encodeWithConfig(
   }
 
   function isDownFilled(): boolean {
-    for (let newY = y - 1; y >= 0; y--) {
+    for (let newY = y - 1; newY >= 0; newY--) {
       if (grid[newY][x] === "empty") return false;
       if (grid[newY][x] === "filled") return true;
     }
@@ -186,7 +207,7 @@ export function encodeWithConfig(
   }
 
   function isLeftFilled(): boolean {
-    for (let newX = x - 1; newX >= 0; newX++) {
+    for (let newX = x - 1; newX >= 0; newX--) {
       if (grid[y][newX] === "empty") return false;
       if (grid[y][newX] === "filled") return true;
     }
@@ -270,7 +291,9 @@ export function encodeWithConfig(
 
   grid[y][x] = "processed";
   while (!isEnd()) {
+    console.log(grid, { x, y, direction });
     const [push, command] = nextDirection(isFilled());
+    console.log({ push, command });
     if (push) {
       const toPush: Record<"command", Command> = { command: "push" };
       backStack.push({ coord: [x, y], direction, removeHandle: toPush });
