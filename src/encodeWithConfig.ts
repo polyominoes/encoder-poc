@@ -76,7 +76,7 @@ export function encodeWithConfig(
 
   function nextDirection(
     filled: Record<Direction, boolean>
-  ): [push: boolean, command: Exclude<Command, "push">] {
+  ): [push: number, command: Exclude<Command, "push">] {
     const count = [
       filled.up && direction !== "down",
       filled.right && direction !== "left",
@@ -84,9 +84,9 @@ export function encodeWithConfig(
       filled.left && direction !== "right",
     ].reduce((acc, curr) => acc + +curr, 0);
     if (!count) {
-      return [false, "pop"];
+      return [0, "pop"];
     }
-    const push = count > 1;
+    const push = count - 1;
     if (relative) {
       if (ccw) {
         if (filled[direction]) {
@@ -222,6 +222,15 @@ export function encodeWithConfig(
     };
   }
 
+  function isFilledPopped(): Record<Direction, boolean> {
+    return {
+      up: y !== grid.length - 1 && grid[y + 1][x] === "filled",
+      right: x !== grid[0].length - 1 && grid[y][x + 1] === "filled",
+      down: y !== 0 && grid[y - 1][x] === "filled",
+      left: x !== 0 && grid[y][x - 1] === "filled",
+    };
+  }
+
   function isEnd(): boolean {
     return (
       grid.findIndex(
@@ -272,14 +281,14 @@ export function encodeWithConfig(
       }
       return false;
     } else if (direction === "down") {
-      for (let newY = y - 1; y >= 0; y--) {
+      for (let newY = y - 1; newY >= 0; newY--) {
         if (grid[newY][x] === "filled") {
           y = newY;
           break;
         }
       }
     } else {
-      for (let newX = x - 1; newX >= 0; newX++) {
+      for (let newX = x - 1; newX >= 0; newX--) {
         if (grid[y][newX] === "filled") {
           x = newX;
           break;
@@ -289,16 +298,20 @@ export function encodeWithConfig(
   }
 
   grid[y][x] = "processed";
+  let lastPopped = false;
   while (!isEnd()) {
-    const [push, command] = nextDirection(isFilled());
-    if (push) {
+    const [push, command] = nextDirection(
+      lastPopped ? isFilledPopped() : isFilled()
+    );
+    for (let i = 0; i < push; i++) {
       const toPush: Record<"command", Command> = { command: "push" };
       backStack.push({ coord: [x, y], direction, removeHandle: toPush });
       commands.push(toPush);
     }
+    lastPopped = command === "pop";
     if (command === "pop") {
-      pop();
       commands.push({ command: "pop" });
+      pop();
     } else {
       move(command);
       grid[y][x] = "processed";
