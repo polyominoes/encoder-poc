@@ -2,6 +2,7 @@
   "private": true,
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^22.5.4",
     "typescript": "^5.5.2"
   }
 }
