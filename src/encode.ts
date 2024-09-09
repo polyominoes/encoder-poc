@@ -2,8 +2,13 @@ import { Coord } from "./Coord";
 import { EncodeConfig, encodeWithConfig } from "./encodeWithConfig";
 
 export function encode(polyomino: Coord[]): Uint8Array {
-  let bestEncoding: Uint8Array | null = null;
+  if (polyomino.length === 0) {
+    return new Uint8Array([]);
+  }
 
+  let bestEncoding: [encoding: Uint8Array, optionIndex: number] | null = null;
+
+  let i = 0;
   for (const useQueueInsteadOfStack of [false, true]) {
     for (const relative of [false, true]) {
       for (const ccw of [false, true]) {
@@ -30,10 +35,11 @@ export function encode(polyomino: Coord[]): Uint8Array {
                 bestEncoding === null ||
                 encoded.length < bestEncoding.length ||
                 (encoded.length === bestEncoding.length &&
-                  compareUint8Arrays(encoded, bestEncoding) < 0)
+                  compareUint8Arrays(encoded, bestEncoding[0]) < 0)
               ) {
-                bestEncoding = encoded;
+                bestEncoding = [encoded, i];
               }
+              i++;
             }
           }
         }
@@ -41,7 +47,7 @@ export function encode(polyomino: Coord[]): Uint8Array {
     }
   }
 
-  return bestEncoding!;
+  return new Uint8Array([bestEncoding![1], ...bestEncoding![0]]);
 }
 
 function compareUint8Arrays(a: Uint8Array, b: Uint8Array): number {
