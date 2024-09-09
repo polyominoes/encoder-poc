@@ -77,7 +77,6 @@ export function encodeWithConfig(
   function nextDirection(
     filled: Record<Direction, boolean>
   ): [push: boolean, command: Exclude<Command, "push">] {
-    console.log(filled);
     const count = [
       filled.up && direction !== "down",
       filled.right && direction !== "left",
@@ -244,7 +243,7 @@ export function encodeWithConfig(
     const popped = useQueueInsteadOfStack ? backStack.shift() : backStack.pop();
     if (!popped) return;
     [x, y] = popped.coord;
-    direction = direction;
+    direction = popped.direction;
     if (isNoFilled()) {
       commands.splice(commands.indexOf(popped.removeHandle), 1);
       pop();
@@ -291,9 +290,7 @@ export function encodeWithConfig(
 
   grid[y][x] = "processed";
   while (!isEnd()) {
-    console.log(grid, { x, y, direction });
     const [push, command] = nextDirection(isFilled());
-    console.log({ push, command });
     if (push) {
       const toPush: Record<"command", Command> = { command: "push" };
       backStack.push({ coord: [x, y], direction, removeHandle: toPush });
