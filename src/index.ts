@@ -1,3 +1,5 @@
+import { createReadStream } from "fs";
+import { createInterface } from "readline";
 import { Coord } from "./lib/Coord";
 import { decode, DecodeOptions } from "./lib/decode";
 import { encode } from "./lib/encode";
@@ -8,21 +10,29 @@ import { encode } from "./lib/encode";
     startCcw: true,
     useQueueInsteadOfStack: false,
   };
-  const polyomino: Coord[] = [
-    [0, 1],
-    [1, 1],
-    [2, 1],
-    [3, 0],
-    [3, 1],
-    [3, 2],
-    [4, 0],
-    [4, 1],
-  ];
-  const encoded = encode(polyomino, defaultOptions);
-  const decoded = decode(encoded, defaultOptions);
-  if (JSON.stringify(polyomino) !== JSON.stringify(decoded)) {
-    console.log(
-      `Error: ${JSON.stringify(polyomino)} !== ${JSON.stringify(decoded)}`
-    );
+  const fileStream = createReadStream("./test.txt");
+
+  const rl = createInterface({
+    input: fileStream,
+    crlfDelay: Infinity,
+  });
+
+  let error = 0;
+  let ok = 0;
+
+  for await (const line of rl) {
+    const polyomino: Coord[] = JSON.parse(line);
+    const encoded = encode(polyomino, defaultOptions);
+    const decoded = decode(encoded, defaultOptions);
+    if (JSON.stringify(polyomino) !== JSON.stringify(decoded)) {
+      console.log(
+        `Error: ${JSON.stringify(polyomino)} !== ${JSON.stringify(decoded)}`
+      );
+      error++;
+    } else {
+      ok++;
+    }
   }
+
+  console.log({ error, ok });
 })();

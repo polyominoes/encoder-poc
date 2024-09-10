@@ -137,7 +137,7 @@ export function encode(
     } else if (available.down) {
       return [push, directionToCommand("down")];
     } else {
-      return [push, directionToCommand("right")];
+      return [push, directionToCommand("left")];
     }
   }
 
