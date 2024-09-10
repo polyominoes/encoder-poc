@@ -1,45 +1,28 @@
-import { createReadStream } from "fs";
-import { createInterface } from "readline";
-import { Coord } from "./Coord";
-import { decode } from "./decode";
-import { encode } from "./encode";
+import { Coord } from "./lib/Coord";
+import { decode, DecodeOptions } from "./lib/decode";
+import { encode } from "./lib/encode";
 
 (async function main() {
-  const fileStream = createReadStream("./test.txt");
-
-  const rl = createInterface({
-    input: fileStream,
-    crlfDelay: Infinity,
-  });
-
-  let error = 0;
-  let ok = 0;
-
-  for await (const line of rl) {
-    const polyomino: Coord[] = JSON.parse(line);
-    const encoded = encode(polyomino);
-    const decoded = encode(decode(encoded));
-
-    if (compareUint8Arrays(encoded, decoded)) {
-      error++;
-      console.log("Error: encoded/decoded mismatch", {
-        polyomino,
-        encoded,
-        decoded,
-      });
-    } else {
-      ok++;
-      console.log("OK");
-    }
+  const defaultOptions: DecodeOptions = {
+    startDirection: "left",
+    startCcw: true,
+    useQueueInsteadOfStack: false,
+  };
+  const polyomino: Coord[] = [
+    [0, 1],
+    [1, 1],
+    [2, 1],
+    [3, 0],
+    [3, 1],
+    [3, 2],
+    [4, 0],
+    [4, 1],
+  ];
+  const encoded = encode(polyomino, defaultOptions);
+  const decoded = decode(encoded, defaultOptions);
+  if (JSON.stringify(polyomino) !== JSON.stringify(decoded)) {
+    console.log(
+      `Error: ${JSON.stringify(polyomino)} !== ${JSON.stringify(decoded)}`
+    );
   }
-  console.log({ error, ok });
 })();
-
-function compareUint8Arrays(a: Uint8Array, b: Uint8Array): number {
-  const minLength = Math.min(a.length, b.length);
-  for (let i = 0; i < minLength; i++) {
-    if (a[i] < b[i]) return -1;
-    if (a[i] > b[i]) return 1;
-  }
-  return a.length - b.length;
-}
