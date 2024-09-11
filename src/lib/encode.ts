@@ -21,9 +21,19 @@ const coord: Record<Direction, Coord> = {
   left: [-1, 0],
 };
 
+export interface EncodeOptions {
+  preferredDirection:
+    | { type: "absolute"; directions: readonly Direction[] }
+    | {
+        type: "relative";
+        commands: readonly ("forward" | "turnLeft" | "turnRight")[];
+      };
+}
+
 export function encode(
   normalizedPolyomino: Coord[],
-  { startDirection, startCcw, useQueueInsteadOfStack }: DecodeOptions
+  { startDirection, startCcw, useQueueInsteadOfStack }: DecodeOptions,
+  { preferredDirection }: EncodeOptions
 ): Command[] {
   const grid = (function getGrid() {
     const height = Math.max(...normalizedPolyomino.map(([_, y]) => y)) + 1;
@@ -128,17 +138,27 @@ export function encode(
     const available = isAvailable();
     const count = availableDirectionCount(available);
     const push = count > 1;
+
     if (!count) {
       return [false, "pop"];
-    } else if (available.up) {
-      return [push, directionToCommand("up")];
-    } else if (available.right) {
-      return [push, directionToCommand("right")];
-    } else if (available.down) {
-      return [push, directionToCommand("down")];
+    } else if (preferredDirection.type === "absolute") {
+      for (const direction of preferredDirection.directions) {
+        if (available[direction]) {
+          return [push, directionToCommand(direction)];
+        }
+      }
     } else {
-      return [push, directionToCommand("left")];
+      for (const command of preferredDirection.commands) {
+        if (
+          (command === "forward" && available[direction]) ||
+          (command === "turnLeft" && available[turnL[direction]]) ||
+          (command === "turnRight" && available[turnR[direction]])
+        ) {
+          return [push, command];
+        }
+      }
     }
+    throw new Error("Unreachable");
   }
 
   function move(command: "forward" | "turnRight" | "turnLeft") {
