@@ -1,4 +1,4 @@
-import { Command } from "./Command.";
+import { Command } from "./Command";
 import { Coord } from "./Coord";
 import { DecodeOptions } from "./decode";
 import { Direction } from "./Direction";
@@ -132,7 +132,7 @@ export function encode(
   }
 
   function getNextCommand(): [
-    pop: boolean,
+    push: boolean,
     command: "forward" | "turnRight" | "turnLeft" | "pop"
   ] {
     const available = isAvailable();

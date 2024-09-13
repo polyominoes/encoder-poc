@@ -1,5 +1,5 @@
 import { canonize } from "./canonize";
-import { Command } from "./Command.";
+import { Command } from "./Command";
 import { Coord } from "./Coord";
 import { Direction } from "./Direction";
 import { normalize } from "./normalize";

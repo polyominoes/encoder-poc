@@ -1,4 +1,4 @@
-import { Command } from "./Command.";
+import { Command } from "./Command";
 
 export function commandsToBits(commands: Command[]): string {
   let bits = "";
